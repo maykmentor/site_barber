@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <meta content="noindex,nofollow,noarchive" name="robots"/>
     <title>Barber Premium | Painel de Controle</title>
     
     <!-- Recursos Estáticos Locais Compilados para Alta Performance (PageSpeed 100) -->
@@ -135,6 +136,9 @@
                     </button>
                     <button data-tab="localizacao" class="tab-btn flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold tracking-wide uppercase transition-colors text-left text-on-surface-variant hover:bg-surface-container-high hover:text-primary">
                         <span class="material-symbols-outlined text-lg">map</span> Localização
+                    </button>
+                    <button data-tab="seo" class="tab-btn flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold tracking-wide uppercase transition-colors text-left text-on-surface-variant hover:bg-surface-container-high hover:text-primary">
+                        <span class="material-symbols-outlined text-lg">travel_explore</span> SEO & Robots
                     </button>
                     <button data-tab="integracoes" class="tab-btn flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold tracking-wide uppercase transition-colors text-left text-on-surface-variant hover:bg-surface-container-high hover:text-primary">
                         <span class="material-symbols-outlined text-lg">sync_alt</span> Integrações
@@ -658,6 +662,82 @@
                     </div>
                 </div>
                 
+                <!-- ABA: SEO & ROBOTS -->
+                <div id="tab-content-seo" class="tab-content hidden flex flex-col gap-5">
+                    <p class="text-xs text-on-surface-variant font-light">Controle como mecanismos de busca e outros robôs rastreiam este domínio. A configuração é exclusiva deste deployment na Vercel.</p>
+
+                    <div class="bg-surface-container border border-outline-variant/20 rounded-xl p-5 flex flex-col gap-3">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                            <div>
+                                <h3 class="font-display font-semibold text-sm text-primary uppercase tracking-wider">Arquivo público</h3>
+                                <a id="seo-robots-public-url" href="/robots.txt" target="_blank" rel="noopener" class="text-xs text-primary-container hover:text-primary transition-colors">/robots.txt</a>
+                            </div>
+                            <a href="/robots.txt" target="_blank" rel="noopener" class="bg-surface-container-high hover:bg-surface-container-highest border border-outline-variant/30 text-primary-container px-4 py-2 rounded-lg text-xs font-bold uppercase transition-colors flex items-center gap-1">
+                                <span class="material-symbols-outlined text-base">open_in_new</span> Visualizar arquivo
+                            </a>
+                        </div>
+                        <p class="text-[10px] text-on-surface-variant font-light">Após salvar, a versão pública pode levar até um minuto para refletir a alteração por causa do cache.</p>
+                    </div>
+
+                    <div class="flex flex-col gap-3">
+                        <div>
+                            <h3 class="font-display font-semibold text-sm text-primary uppercase tracking-wider">Configuração guiada</h3>
+                            <p class="text-[10px] text-on-surface-variant font-light mt-1">Escolha um ponto de partida e ajuste o texto no editor avançado se necessário.</p>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <button type="button" id="seo-preset-recommended" class="bg-primary-container/10 hover:bg-surface-container-high border border-primary-container/30 text-primary-container px-4 py-3 rounded-lg text-xs font-bold uppercase transition-colors text-left">
+                                Recomendado
+                                <span class="block text-[10px] text-on-surface-variant font-light mt-1" style="text-transform: none;">Libera o site e protege painel e APIs.</span>
+                            </button>
+                            <button type="button" id="seo-preset-allow" class="bg-surface-container-high hover:bg-surface-container-highest border border-outline-variant/30 px-4 py-3 rounded-lg text-xs font-bold uppercase transition-colors text-left">
+                                Permitir tudo
+                                <span class="block text-[10px] text-on-surface-variant font-light mt-1" style="text-transform: none;">Permite o rastreamento de todas as rotas.</span>
+                            </button>
+                            <button type="button" id="seo-preset-block" class="bg-error/10 hover:bg-error/20 border border-error/30 text-error px-4 py-3 rounded-lg text-xs font-bold uppercase transition-colors text-left">
+                                Bloquear rastreamento
+                                <span class="block text-[10px] text-on-surface-variant font-light mt-1" style="text-transform: none;">Bloqueia o rastreamento de todo o domínio.</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                        <div class="flex items-center justify-between gap-3">
+                            <label for="seo-robots" class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Editor avançado</label>
+                            <span id="seo-robots-count" class="text-[10px] text-on-surface-variant">0 / 512000 bytes</span>
+                        </div>
+                        <textarea id="seo-robots" rows="14" spellcheck="false" class="w-full px-4 py-3 rounded-lg text-sm" style="font-family: monospace; resize: vertical;" aria-describedby="seo-robots-help"></textarea>
+                        <p id="seo-robots-help" class="text-[10px] text-on-surface-variant font-light">Diretivas suportadas pelo Google: User-agent, Allow, Disallow e Sitemap. Não insira senhas ou dados privados: este conteúdo será público.</p>
+                    </div>
+
+                    <div class="bg-surface-container border border-outline-variant/20 rounded-xl p-5 flex flex-col gap-4">
+                        <div>
+                            <h3 class="font-display font-semibold text-sm text-primary uppercase tracking-wider">Testar uma URL</h3>
+                            <p class="text-[10px] text-on-surface-variant font-light mt-1">O teste usa um port direto do parser open source utilizado pelo Google.</p>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="flex flex-col gap-2">
+                                <label for="seo-test-user-agent" class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">User-agent</label>
+                                <input type="text" id="seo-test-user-agent" value="Googlebot" class="w-full px-4 py-3 rounded-lg text-sm" placeholder="Googlebot">
+                            </div>
+                            <div class="flex flex-col gap-2">
+                                <label for="seo-test-url" class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">URL ou caminho</label>
+                                <input type="text" id="seo-test-url" value="/" class="w-full px-4 py-3 rounded-lg text-sm" placeholder="/admin">
+                            </div>
+                        </div>
+                        <div class="flex justify-end">
+                            <button type="button" id="seo-validate-btn" class="bg-surface-container-high hover:bg-surface-container-highest border border-outline-variant/30 text-primary-container px-5 py-2.5 rounded-lg text-xs font-bold uppercase transition-colors flex items-center gap-1">
+                                <span class="material-symbols-outlined text-base">fact_check</span> Validar e testar
+                            </button>
+                        </div>
+                        <div id="seo-validation-status" class="hidden border border-outline-variant/30 rounded-lg px-4 py-3 text-xs" role="status" aria-live="polite"></div>
+                    </div>
+
+                    <div class="bg-error/10 border border-error/30 rounded-xl p-4">
+                        <p class="text-xs text-error font-semibold">robots.txt não protege rotas e não remove páginas já indexadas.</p>
+                        <p class="text-[10px] text-on-surface-variant font-light mt-1">Use autenticação para conteúdo privado e ferramentas do mecanismo de busca quando precisar remover uma URL do índice.</p>
+                    </div>
+                </div>
+
                 <!-- ABA: INTEGRAÇÕES -->
                 <div id="tab-content-integracoes" class="tab-content hidden flex flex-col gap-5">
                     <p class="text-xs text-on-surface-variant font-light">Configure ferramentas de marketing, rastreamento e integrações com o Google Maps em tempo real.</p>
@@ -813,6 +893,9 @@
             directions_url: "",
             map_iframe: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3657.1975870002874!2d-46.654316085022175!3d-23.561349884682054!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94ce59c8da06ab91%3A0xf65cd64d35eb659c!2sAv.%20Paulista%2C%201000%20-%20Bela%20Vista%2C%20S%C3%A3o%20Paulo%20-%20SP%2C%2001310-100!5e0!3m2!1spt-BR!2sbr!4v1684784910394!5m2!1spt-BR!2sbr"
           },
+          seo: {
+            robots_txt: "User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /admin.html\nDisallow: /api/"
+          },
           integrations: {
             gtm_id: "",
             webhook_url: "",
@@ -924,6 +1007,105 @@
                 // Mudar título
                 panelTitle.innerText = tab.innerText.trim();
             });
+        });
+
+        // CONFIGURAÇÃO E TESTE DO ROBOTS.TXT
+        const MAX_ROBOTS_BYTES = 500 * 1024;
+        const ROBOTS_PRESETS = {
+            recommended: DEFAULT_CONFIG.seo.robots_txt,
+            allow: "User-agent: *\nAllow: /",
+            block: "User-agent: *\nDisallow: /"
+        };
+        const robotsTextarea = document.getElementById('seo-robots');
+        const robotsCount = document.getElementById('seo-robots-count');
+        const robotsPublicUrl = new URL('/robots.txt', window.location.origin).toString();
+        const robotsPublicLink = document.getElementById('seo-robots-public-url');
+        robotsPublicLink.href = robotsPublicUrl;
+        robotsPublicLink.textContent = robotsPublicUrl;
+
+        function updateRobotsByteCount() {
+            const bytes = new TextEncoder().encode(robotsTextarea.value).length;
+            robotsCount.textContent = `${bytes} / ${MAX_ROBOTS_BYTES} bytes`;
+            robotsCount.style.color = bytes > MAX_ROBOTS_BYTES ? '#ffb4ab' : '';
+            return bytes;
+        }
+
+        function applyRobotsPreset(content) {
+            robotsTextarea.value = content;
+            updateRobotsByteCount();
+            document.getElementById('seo-validation-status').classList.add('hidden');
+        }
+
+        robotsTextarea.addEventListener('input', updateRobotsByteCount);
+        document.getElementById('seo-preset-recommended').addEventListener('click', () => applyRobotsPreset(ROBOTS_PRESETS.recommended));
+        document.getElementById('seo-preset-allow').addEventListener('click', () => applyRobotsPreset(ROBOTS_PRESETS.allow));
+        document.getElementById('seo-preset-block').addEventListener('click', () => {
+            if (confirm('Bloquear todo o rastreamento pode prejudicar seriamente o SEO deste domínio. Deseja continuar?')) {
+                applyRobotsPreset(ROBOTS_PRESETS.block);
+            }
+        });
+
+        document.getElementById('seo-validate-btn').addEventListener('click', async () => {
+            const button = document.getElementById('seo-validate-btn');
+            const status = document.getElementById('seo-validation-status');
+            const originalHtml = button.innerHTML;
+            const userAgent = document.getElementById('seo-test-user-agent').value.trim();
+            const urlInput = document.getElementById('seo-test-url').value.trim();
+            let targetUrl;
+
+            try {
+                targetUrl = new URL(urlInput || '/', window.location.origin).toString();
+                if (new URL(targetUrl).origin !== window.location.origin) {
+                    throw new Error('Domínio diferente');
+                }
+            } catch (_error) {
+                status.textContent = 'Informe uma URL ou um caminho válido deste domínio.';
+                status.style.borderColor = '#ffb4ab';
+                status.style.color = '#ffb4ab';
+                status.classList.remove('hidden');
+                return;
+            }
+
+            button.disabled = true;
+            button.innerHTML = '<span class="material-symbols-outlined text-base animate-spin">sync</span> Validando...';
+
+            try {
+                const response = await fetch('/api/validate-robots', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        content: robotsTextarea.value,
+                        userAgent,
+                        url: targetUrl
+                    })
+                });
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || 'Não foi possível validar o arquivo.');
+                }
+
+                const decision = data.allowed ? 'PERMITIDO' : 'BLOQUEADO';
+                const match = data.matching_rule
+                    ? ` Regra aplicada na linha ${data.matching_line}: ${data.matching_rule}.`
+                    : ' Nenhuma regra específica foi aplicada.';
+                const warnings = data.warnings && data.warnings.length
+                    ? ` Avisos: ${data.warnings.join(' ')}`
+                    : ' Sintaxe sem avisos.';
+
+                status.textContent = `${decision} para ${userAgent || 'Googlebot'}.${match}${warnings}`;
+                status.style.borderColor = data.allowed ? 'var(--dynamic-primary)' : '#ffb4ab';
+                status.style.color = data.allowed ? 'var(--dynamic-primary)' : '#ffb4ab';
+                status.classList.remove('hidden');
+            } catch (error) {
+                status.textContent = `Erro: ${error.message}`;
+                status.style.borderColor = '#ffb4ab';
+                status.style.color = '#ffb4ab';
+                status.classList.remove('hidden');
+            } finally {
+                button.disabled = false;
+                button.innerHTML = originalHtml;
+            }
         });
 
         // ATUALIZAÇÃO DOS HEX DE CORES EM TEMPO REAL (Bidirecional)
@@ -1438,6 +1620,13 @@
             document.getElementById('l-hours').value = data.location.hours;
             document.getElementById('l-directions-url').value = data.location.directions_url || '';
             document.getElementById('l-iframe').value = data.location.map_iframe;
+
+            // SEO & Robots
+            const seoConfig = data.seo || DEFAULT_CONFIG.seo;
+            document.getElementById('seo-robots').value = typeof seoConfig.robots_txt === 'string'
+                ? seoConfig.robots_txt
+                : DEFAULT_CONFIG.seo.robots_txt;
+            updateRobotsByteCount();
             
             // Integrações
             document.getElementById('i-gtm').value = data.integrations ? (data.integrations.gtm_id || '') : '';
@@ -1503,6 +1692,17 @@
         // SALVAR ALTERAÇÕES
         document.getElementById('config-form').addEventListener('submit', (e) => {
             e.preventDefault();
+
+            const robotsTxt = document.getElementById('seo-robots').value.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
+            const robotsBytes = new TextEncoder().encode(robotsTxt).length;
+            if (robotsBytes > MAX_ROBOTS_BYTES) {
+                alert(`O robots.txt excede o limite de ${MAX_ROBOTS_BYTES} bytes. Reduza o conteúdo antes de salvar.`);
+                return;
+            }
+            if (robotsTxt.includes('\0')) {
+                alert('O robots.txt contém um caractere nulo inválido. Remova-o antes de salvar.');
+                return;
+            }
             
             const newConfig = {
                 general: {
@@ -1576,6 +1776,9 @@
                     hours: document.getElementById('l-hours').value,
                     directions_url: document.getElementById('l-directions-url').value,
                     map_iframe: document.getElementById('l-iframe').value
+                },
+                seo: {
+                    robots_txt: robotsTxt
                 },
                 integrations: {
                     gtm_id: document.getElementById('i-gtm').value,
@@ -1674,6 +1877,12 @@
                     const parsedData = JSON.parse(event.target.result);
                     // Validação de estrutura básica
                     if (parsedData.general && parsedData.colors && parsedData.services) {
+                        if (!parsedData.seo || typeof parsedData.seo.robots_txt !== 'string') {
+                            parsedData.seo = {
+                                ...(parsedData.seo || {}),
+                                robots_txt: robotsTextarea.value
+                            };
+                        }
                         try {
                             localStorage.setItem('elegance_barber_config', JSON.stringify(parsedData));
                         } catch (e) {
@@ -1683,8 +1892,8 @@
                                 return;
                             }
                         }
-                        loadCurrentConfig();
-                        showToast("Backup restaurado com sucesso!");
+                        populateFormFields(parsedData);
+                        showToast("Backup carregado. Clique em Salvar Alterações para sincronizar com a nuvem.");
                     } else {
                         alert("Erro: Arquivo JSON de backup inválido.");
                     }

@@ -1,0 +1,14 @@
+{
+  "name": "barber-premium-site",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@trybyte/robotstxt-parser": "1.2.0"
+  }
+}
