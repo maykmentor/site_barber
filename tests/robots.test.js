@@ -348,16 +348,15 @@ test('validador falha fechado quando não recebe o domínio do deployment', asyn
     assert.match(res.body.error, /determinar o domínio/);
 });
 
-test('save-config autentica antes de inspecionar conteúdo grande', async () => {
+test('save-config exige sessão antes de inspecionar conteúdo grande', async () => {
     const res = createResponse();
 
     await saveConfigHandler({
         method: 'POST',
         body: {
-            password: 'senha-incorreta',
             config: { seo: { robots_txt: 'a'.repeat(MAX_ROBOTS_BYTES + 1) } }
         }
     }, res);
 
-    assert.equal(res.statusCode, 403);
+    assert.equal(res.statusCode, 401);
 });

@@ -729,8 +729,25 @@
                             </div>
                             <div class="flex flex-col gap-2">
                                 <label for="seo-social-image" class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Imagem social</label>
-                                <input type="url" id="seo-social-image" class="w-full px-4 py-3 rounded-lg text-sm" placeholder="https://.../imagem-1200x630.jpg">
-                                <span class="text-[10px] text-on-surface-variant font-light">Recomendação: imagem pública de 1200 × 630 px.</span>
+                                <input type="hidden" id="seo-social-image">
+                                <div class="relative w-full overflow-hidden rounded-xl border border-outline-variant/30 bg-surface-container-high" style="aspect-ratio: 1200 / 630;">
+                                    <img id="seo-social-image-preview" alt="Prévia da imagem social" class="hidden h-full w-full object-cover">
+                                    <div id="seo-social-image-placeholder" class="absolute inset-0 flex flex-col items-center justify-center gap-2 text-on-surface-variant">
+                                        <span class="material-symbols-outlined text-4xl">image</span>
+                                        <span class="text-[10px] uppercase tracking-wider">1200 × 630 px</span>
+                                    </div>
+                                </div>
+                                <div class="flex flex-wrap gap-2">
+                                    <label id="seo-social-upload-label" class="cursor-pointer bg-surface-container-high hover:bg-surface-container-highest border border-outline-variant/30 text-primary-container px-4 py-2.5 rounded-lg text-xs font-bold uppercase transition-colors flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-base">upload</span>
+                                        <span id="seo-social-upload-text">Enviar imagem</span>
+                                        <input type="file" id="seo-social-image-upload" class="hidden" accept="image/jpeg,image/png,image/webp">
+                                    </label>
+                                    <button type="button" id="seo-social-image-remove" class="hidden bg-error/10 hover:bg-error/20 border border-error/30 text-error px-4 py-2.5 rounded-lg text-xs font-bold uppercase transition-colors flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-base">delete</span> Remover
+                                    </button>
+                                </div>
+                                <span id="seo-social-image-status" class="text-[10px] text-on-surface-variant font-light">JPEG, PNG ou WebP de até 10 MB. O painel recorta e otimiza automaticamente para 1200 × 630 px.</span>
                             </div>
                         </div>
                     </div>
@@ -1012,18 +1029,6 @@
           }
         };
 
-        // SENHA DE SEGURANÇA (MASCARADA VIA HASH SHA-256)
-        const MASTER_PASSWORD_HASH = "bb87999ce3ba58cef343d0a6c2d9d2d294b9f817eeee16dc3c05d6d6b331a5f5";
-
-        // Função auxiliar para computar o hash SHA-256 no cliente
-        async function sha256(message) {
-            const msgBuffer = new TextEncoder().encode(message);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-            return hashHex;
-        }
-
         // CONTROLE DE AUTENTICAÇÃO
         const loginContainer = document.getElementById('login-container');
         const adminPanel = document.getElementById('admin-panel');
@@ -1033,33 +1038,35 @@
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const enteredPassword = document.getElementById('password').value;
-            
-            // Bypass direto com a credencial mestra original (Segurança e Compatibilidade total)
-            if (enteredPassword === "6AEwhQnQCoTWHWF!id$52z") {
-                sessionStorage.setItem('elegance_session', 'authenticated');
-                sessionStorage.setItem('elegance_admin_password', enteredPassword);
-                showPanel();
-                return;
-            }
-            
+            const submitButton = loginForm.querySelector('button[type="submit"]');
+            const originalButtonText = submitButton.textContent;
+            submitButton.disabled = true;
+            submitButton.textContent = 'Validando...';
+            errorMsg.classList.add('hidden');
             try {
-                // Tenta validar usando hash criptográfico robusto
-                const hashed = await sha256(enteredPassword);
-                if (hashed === MASTER_PASSWORD_HASH) {
-                    sessionStorage.setItem('elegance_session', 'authenticated');
-                    sessionStorage.setItem('elegance_admin_password', enteredPassword);
-                    showPanel();
-                } else {
-                    errorMsg.classList.remove('hidden');
-                }
+                const response = await fetch('/api/admin-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: enteredPassword })
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success || !data.token) throw new Error('Credenciais inválidas.');
+                sessionStorage.setItem('elegance_session', 'authenticated');
+                sessionStorage.setItem('elegance_admin_token', data.token);
+                document.getElementById('password').value = '';
+                showPanel();
             } catch (err) {
-                console.warn("Erro ao calcular hash criptográfico:", err);
+                errorMsg.textContent = err.message || 'Não foi possível validar o acesso.';
                 errorMsg.classList.remove('hidden');
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = originalButtonText;
             }
         });
 
         function checkSession() {
-            if (sessionStorage.getItem('elegance_session') === 'authenticated') {
+            if (sessionStorage.getItem('elegance_session') === 'authenticated'
+                && sessionStorage.getItem('elegance_admin_token')) {
                 showPanel();
             }
         }
@@ -1072,6 +1079,7 @@
 
         document.getElementById('logout-btn').addEventListener('click', () => {
             sessionStorage.removeItem('elegance_session');
+            sessionStorage.removeItem('elegance_admin_token');
             window.location.reload();
         });
 
@@ -1213,6 +1221,154 @@
             status.style.color = hasIdentity ? 'var(--dynamic-primary)' : '#ffb4ab';
         }
 
+        function updateSocialImagePreview() {
+            const imageUrl = document.getElementById('seo-social-image').value.trim();
+            const preview = document.getElementById('seo-social-image-preview');
+            const placeholder = document.getElementById('seo-social-image-placeholder');
+            const removeButton = document.getElementById('seo-social-image-remove');
+
+            if (!imageUrl) {
+                preview.removeAttribute('src');
+                preview.classList.add('hidden');
+                placeholder.classList.remove('hidden');
+                removeButton.classList.add('hidden');
+                return;
+            }
+
+            preview.onload = () => {
+                preview.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+            };
+            preview.onerror = () => {
+                preview.classList.add('hidden');
+                placeholder.classList.remove('hidden');
+            };
+            preview.src = imageUrl;
+            removeButton.classList.remove('hidden');
+        }
+
+        function cropSocialImage(file) {
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                return Promise.reject(new Error('Selecione uma imagem JPEG, PNG ou WebP.'));
+            }
+            if (file.size > 10 * 1024 * 1024) {
+                return Promise.reject(new Error('A imagem original deve ter no máximo 10 MB.'));
+            }
+
+            return new Promise((resolve, reject) => {
+                const objectUrl = URL.createObjectURL(file);
+                const image = new Image();
+                image.onload = () => {
+                    URL.revokeObjectURL(objectUrl);
+                    if (image.width * image.height > 40 * 1000 * 1000) {
+                        reject(new Error('A imagem original excede o limite de 40 megapixels.'));
+                        return;
+                    }
+
+                    const targetWidth = 1200;
+                    const targetHeight = 630;
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    const scale = Math.max(targetWidth / image.width, targetHeight / image.height);
+                    const drawWidth = image.width * scale;
+                    const drawHeight = image.height * scale;
+                    const offsetX = (targetWidth - drawWidth) / 2;
+                    const offsetY = (targetHeight - drawHeight) / 2;
+                    canvas.width = targetWidth;
+                    canvas.height = targetHeight;
+                    context.fillStyle = '#111111';
+                    context.fillRect(0, 0, targetWidth, targetHeight);
+                    context.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
+
+                    let dataUrl = canvas.toDataURL('image/jpeg', 0.86);
+                    const getBytes = value => Math.ceil((value.length - value.indexOf(',') - 1) * 3 / 4);
+                    if (getBytes(dataUrl) > 1500 * 1024) dataUrl = canvas.toDataURL('image/jpeg', 0.76);
+                    if (getBytes(dataUrl) > 1500 * 1024) dataUrl = canvas.toDataURL('image/jpeg', 0.66);
+                    if (getBytes(dataUrl) > 1500 * 1024) {
+                        reject(new Error('Não foi possível reduzir a imagem para menos de 1,5 MB.'));
+                        return;
+                    }
+                    resolve(dataUrl);
+                };
+                image.onerror = () => {
+                    URL.revokeObjectURL(objectUrl);
+                    reject(new Error('Não foi possível decodificar a imagem selecionada.'));
+                };
+                image.src = objectUrl;
+            });
+        }
+
+        function setSocialUploadBusy(busy) {
+            const label = document.getElementById('seo-social-upload-label');
+            const text = document.getElementById('seo-social-upload-text');
+            label.classList.toggle('opacity-75', busy);
+            label.classList.toggle('pointer-events-none', busy);
+            text.textContent = busy ? 'Enviando...' : 'Enviar imagem';
+        }
+
+        document.getElementById('seo-social-image-upload').addEventListener('change', async event => {
+            const file = event.target.files[0];
+            if (!file) return;
+            const status = document.getElementById('seo-social-image-status');
+            const adminToken = sessionStorage.getItem('elegance_admin_token');
+            if (!adminToken) {
+                status.textContent = 'Sua sessão expirou. Entre novamente para enviar imagens.';
+                status.style.color = '#ffb4ab';
+                event.target.value = '';
+                return;
+            }
+
+            setSocialUploadBusy(true);
+            status.textContent = 'Processando e enviando a imagem...';
+            status.style.color = '';
+            try {
+                const image = await cropSocialImage(file);
+                const response = await fetch('/api/upload-social-image', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${adminToken}`
+                    },
+                    body: JSON.stringify({ image })
+                });
+                const data = await response.json();
+                if (response.status === 401) {
+                    sessionStorage.removeItem('elegance_session');
+                    sessionStorage.removeItem('elegance_admin_token');
+                }
+                if (!response.ok || !data.success || !data.url) {
+                    throw new Error(data.error || 'Não foi possível enviar a imagem.');
+                }
+
+                const imageInput = document.getElementById('seo-social-image');
+                imageInput.value = data.url;
+                imageInput.dispatchEvent(new Event('input'));
+                hasPendingConfigChanges = true;
+                updateSocialImagePreview();
+                status.textContent = 'Imagem enviada. Clique em Salvar Alterações para publicar a nova URL no SEO.';
+                status.style.color = 'var(--dynamic-primary)';
+                showToast('Imagem social enviada e otimizada com sucesso!');
+            } catch (error) {
+                status.textContent = `Erro: ${error.message}`;
+                status.style.color = '#ffb4ab';
+            } finally {
+                setSocialUploadBusy(false);
+                event.target.value = '';
+            }
+        });
+
+        document.getElementById('seo-social-image-remove').addEventListener('click', () => {
+            const imageInput = document.getElementById('seo-social-image');
+            imageInput.value = '';
+            imageInput.dispatchEvent(new Event('input'));
+            hasPendingConfigChanges = true;
+            updateSocialImagePreview();
+            const status = document.getElementById('seo-social-image-status');
+            status.textContent = 'Imagem removida da configuração. Clique em Salvar Alterações para publicar.';
+            status.style.color = '#ffb4ab';
+        });
+
         seoFieldIds.forEach(id => document.getElementById(id).addEventListener('input', updateSeoPreview));
 
         // CONFIGURAÇÃO E TESTE DO ROBOTS.TXT
@@ -1238,6 +1394,7 @@
 
         function applyRobotsPreset(content) {
             robotsTextarea.value = content;
+            hasPendingConfigChanges = true;
             updateRobotsByteCount();
             updateSeoPreview();
             document.getElementById('seo-validation-status').classList.add('hidden');
@@ -1476,6 +1633,12 @@
 
         let currentGalleryData = [];
         let currentConfigData = DEFAULT_CONFIG;
+        let hasPendingConfigChanges = false;
+        let configLoadRequest = 0;
+
+        document.getElementById('config-form').addEventListener('input', event => {
+            if (event.isTrusted) hasPendingConfigChanges = true;
+        });
 
         function renderAdminGallery() {
             const containers = {
@@ -1698,6 +1861,7 @@
                             if (item) {
                                 if (type === 'mobile') {
                                     item.img_mobile = base64;
+                                    hasPendingConfigChanges = true;
                                     const textInput = document.querySelector(`.g-item-img-mobile[data-id="${id}"]`);
                                     if (textInput) textInput.value = base64;
                                     
@@ -1710,6 +1874,7 @@
                                     }
                                 } else {
                                     item.img = base64;
+                                    hasPendingConfigChanges = true;
                                     const textInput = document.querySelector(`.g-item-img[data-id="${id}"]`);
                                     if (textInput) textInput.value = base64;
                                     
@@ -1751,11 +1916,13 @@
                 desc: ''
             };
             currentGalleryData.push(newItem);
+            hasPendingConfigChanges = true;
             renderAdminGallery();
         }
 
         function deleteGalleryItem(id) {
             currentGalleryData = currentGalleryData.filter(item => item.id !== id);
+            hasPendingConfigChanges = true;
             renderAdminGallery();
         }
 
@@ -1845,6 +2012,7 @@
             document.getElementById('seo-social-title').value = seoConfig.social_title || '';
             document.getElementById('seo-social-description').value = seoConfig.social_description || '';
             document.getElementById('seo-social-image').value = seoConfig.social_image_url || '';
+            updateSocialImagePreview();
 
             // Robots.txt: novo namespace com fallback para configurações antigas.
             const robotsConfig = data.robots || {};
@@ -1892,6 +2060,8 @@
 
         // CARREGAR E PREENCHER CONFIGURAÇÕES ATUAIS (HÍBRIDO: LOCAL + NUVEM)
         function loadCurrentConfig() {
+            const requestId = ++configLoadRequest;
+            hasPendingConfigChanges = false;
             // Fase 1: Carrega imediatamente do localStorage para resposta rápida
             let config = localStorage.getItem('elegance_barber_config');
             if (!config) {
@@ -1905,7 +2075,7 @@
             fetch('/api/get-config')
                 .then(response => response.json())
                 .then(data => {
-                    if (data && data.success && data.config) {
+                    if (requestId === configLoadRequest && !hasPendingConfigChanges && data && data.success && data.config) {
                         populateFormFields(data.config);
                         localStorage.setItem('elegance_barber_config', JSON.stringify(data.config));
                     }
@@ -2061,39 +2231,38 @@
             }
             showToast("Salvo localmente! Sincronizando com a nuvem...");
             
-            // Fase 2: Sincroniza as alterações com o banco de dados Vercel KV
-            let password = sessionStorage.getItem('elegance_admin_password');
-            if (!password) {
-                password = prompt("Por favor, confirme sua senha administrativa de segurança para salvar em nuvem:");
+            // Fase 2: Sincroniza as alterações com o Supabase usando a sessão do painel.
+            const adminToken = sessionStorage.getItem('elegance_admin_token');
+            if (!adminToken) {
+                alert('As alterações foram salvas apenas localmente porque sua sessão administrativa expirou. Entre novamente para sincronizar.');
+                return;
             }
-            
-            if (password) {
-                fetch('/api/save-config', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        config: newConfig,
-                        password: password
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data && data.success) {
-                        showToast("Alterações sincronizadas na nuvem com sucesso!");
-                        sessionStorage.setItem('elegance_admin_password', password);
-                    } else {
-                        alert(`Atenção: As alterações foram salvas localmente neste navegador, mas não puderam ser gravadas na nuvem.\n\nDetalhes do erro: ${data.error || 'Desconhecido'}`);
+
+            fetch('/api/save-config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${adminToken}`
+                },
+                body: JSON.stringify({ config: newConfig })
+            })
+            .then(async response => ({ response, data: await response.json() }))
+            .then(({ response, data }) => {
+                if (data && data.success) {
+                    hasPendingConfigChanges = false;
+                    showToast("Alterações sincronizadas na nuvem com sucesso!");
+                } else {
+                    if (response.status === 401) {
+                        sessionStorage.removeItem('elegance_session');
+                        sessionStorage.removeItem('elegance_admin_token');
                     }
-                })
-                .catch(err => {
-                    console.error("Erro de conexão ao salvar na nuvem Vercel KV:", err);
-                    alert("Atenção: As edições foram gravadas localmente, mas não puderam ser sincronizadas com o servidor devido a uma falha de conexão.");
-                });
-            } else {
-                alert("As alterações foram salvas apenas localmente neste navegador, pois a senha administrativa não foi fornecida.");
-            }
+                    alert(`Atenção: As alterações foram salvas localmente neste navegador, mas não puderam ser gravadas na nuvem.\n\nDetalhes do erro: ${data.error || 'Desconhecido'}`);
+                }
+            })
+            .catch(err => {
+                console.error("Erro de conexão ao salvar no Supabase:", err);
+                alert("Atenção: As edições foram gravadas localmente, mas não puderam ser sincronizadas com o servidor devido a uma falha de conexão.");
+            });
         });
 
         // EVENTO CANCELAR
@@ -2351,6 +2520,7 @@
                         : canvas.toDataURL(mimeType, quality);
                     
                     targetInput.value = base64Data;
+                    hasPendingConfigChanges = true;
                     targetInput.dispatchEvent(new Event('input'));
                     
                     // Restaura label original

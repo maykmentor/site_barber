@@ -1,9 +1,7 @@
 // api/save-config.js
-const crypto = require('crypto');
 const { inspectRobotsText } = require('../lib/robots');
-
-// Hash SHA-256 da senha mestra correspondente a "6AEwhQnQCoTWHWF!id$52z"
-const MASTER_PASSWORD_HASH = "bb87999ce3ba58cef343d0a6c2d9d2d294b9f817eeee16dc3c05d6d6b331a5f5";
+const { isAuthorizedAdminRequest } = require('../lib/admin-auth');
+const { SOCIAL_IMAGE_BUCKET, getManagedSocialImagePath } = require('../lib/social-image-storage');
 
 function mergeStoredConfig(currentConfig, submittedConfig, normalizedRobotsText, flags = {}) {
     const suppliedSeo = submittedConfig.seo && typeof submittedConfig.seo === 'object' ? submittedConfig.seo : {};
@@ -33,6 +31,24 @@ function mergeStoredConfig(currentConfig, submittedConfig, normalizedRobotsText,
     };
 }
 
+async function deletePreviousSocialImage(previousUrl, nextUrl, supabaseUrl, serviceRoleKey, configId) {
+    if (!serviceRoleKey || previousUrl === nextUrl) return;
+    const objectPath = getManagedSocialImagePath(previousUrl, supabaseUrl, configId);
+    if (!objectPath) return;
+    const response = await fetch(`${supabaseUrl}/storage/v1/object/${SOCIAL_IMAGE_BUCKET}`, {
+        method: 'DELETE',
+        headers: {
+            apikey: serviceRoleKey,
+            Authorization: `Bearer ${serviceRoleKey}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ prefixes: [objectPath] })
+    });
+    if (!response.ok && response.status !== 404) {
+        throw new Error(`Não foi possível remover a imagem social anterior (${response.status}).`);
+    }
+}
+
 module.exports = async (req, res) => {
     // Adiciona cabeçalhos de CORS básicos
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -48,23 +64,14 @@ module.exports = async (req, res) => {
         return res.status(405).json({ success: false, error: "Método não permitido." });
     }
 
-    const { config, password } = req.body || {};
+    const { config } = req.body || {};
+
+    if (!isAuthorizedAdminRequest(req)) {
+        return res.status(401).json({ success: false, error: 'Sessão administrativa inválida ou expirada.' });
+    }
 
     if (!config) {
         return res.status(400).json({ success: false, error: "Parâmetro 'config' não informado." });
-    }
-
-    // Validação de segurança robusta baseada em senha mestra
-    if (!password) {
-        return res.status(401).json({ success: false, error: "Senha de segurança não fornecida." });
-    }
-
-    // Valida a senha usando hash SHA-256 para não expor a string original em texto plano no console
-    const enteredHash = crypto.createHash('sha256').update(password).digest('hex');
-    const directMatch = password === "6AEwhQnQCoTWHWF!id$52z";
-
-    if (enteredHash !== MASTER_PASSWORD_HASH && !directMatch) {
-        return res.status(403).json({ success: false, error: "Senha de segurança administrativa incorreta." });
     }
 
     const suppliedSeo = config.seo && typeof config.seo === 'object' ? config.seo : {};
@@ -143,6 +150,18 @@ module.exports = async (req, res) => {
             throw new Error(`Erro na gravação do Supabase (${response.status}): ${errText}`);
         }
 
+        try {
+            await deletePreviousSocialImage(
+                currentConfig?.seo?.social_image_url,
+                configToSave?.seo?.social_image_url,
+                supabaseUrl,
+                process.env.SUPABASE_SERVICE_ROLE_KEY,
+                configId
+            );
+        } catch (cleanupError) {
+            console.error('Erro ao limpar imagem social anterior:', cleanupError);
+        }
+
         return res.status(200).json({ success: true, message: "Configuração atualizada com sucesso na nuvem do Supabase!" });
     } catch (error) {
         console.error("Erro ao salvar dados no Supabase:", error);
@@ -151,3 +170,5 @@ module.exports = async (req, res) => {
 };
 
 module.exports.mergeStoredConfig = mergeStoredConfig;
+module.exports.deletePreviousSocialImage = deletePreviousSocialImage;
+module.exports.getManagedSocialImagePath = getManagedSocialImagePath;

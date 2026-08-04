@@ -4,6 +4,7 @@ const { afterEach, test } = require('node:test');
 const pageHandler = require('../api/page');
 const sitemapHandler = require('../api/sitemap');
 const saveConfigHandler = require('../api/save-config');
+const { getSocialImageDirectory } = require('../lib/social-image-storage');
 const {
     deriveSeo,
     injectCriticalContent,
@@ -145,6 +146,24 @@ test('injeção substitui o bloco SEO no HTML inicial', () => {
     assert.match(result, /rel="canonical"/);
 });
 
+test('imagem gerenciada no Storage publica dimensões Open Graph', () => {
+    const html = '<head><!-- SEO_DYNAMIC_START --><title>Antigo</title><!-- SEO_DYNAMIC_END --></head>';
+    const seo = deriveSeo(createConfig({
+        seo: {
+            canonical_url: 'https://www.example.com/',
+            social_image_url: 'https://project.supabase.co/storage/v1/object/public/seo-assets/site/social-hash.jpg'
+        }
+    }), 'https://www.example.com', {
+        hasRemoteConfig: true,
+        supabaseUrl: 'https://project.supabase.co'
+    });
+    const result = injectSeoHead(html, seo);
+
+    assert.match(result, /property="og:image:width" content="1200"/);
+    assert.match(result, /property="og:image:height" content="630"/);
+    assert.match(result, /property="og:image:type" content="image\/jpeg"/);
+});
+
 test('conteúdo local crítico é entregue sem depender de JavaScript', () => {
     const html = [
         '<h1 id="hero-title">Título antigo</h1>',
@@ -173,6 +192,59 @@ test('merge moderno preserva SEO e remove robots legado', () => {
     assert.equal(result.seo.description, 'Nova descrição');
     assert.equal(Object.hasOwn(result.seo, 'robots_txt'), false);
     assert.equal(result.robots.txt, 'User-agent: *\nAllow: /');
+});
+
+test('cleanup reconhece apenas imagem social do projeto Supabase', () => {
+    const configId = 'site_brothers';
+    const directory = getSocialImageDirectory(configId);
+    assert.equal(
+        saveConfigHandler.getManagedSocialImagePath(
+            `https://project.supabase.co/storage/v1/object/public/seo-assets/${directory}/social-hash.jpg`,
+            'https://project.supabase.co',
+            configId
+        ),
+        `${directory}/social-hash.jpg`
+    );
+    assert.equal(
+        saveConfigHandler.getManagedSocialImagePath(
+            `https://outro.example.com/storage/v1/object/public/seo-assets/${directory}/social-hash.jpg`,
+            'https://project.supabase.co',
+            configId
+        ),
+        ''
+    );
+    assert.equal(
+        saveConfigHandler.getManagedSocialImagePath(
+            'https://project.supabase.co/storage/v1/object/public/seo-assets/outro-site/social-hash.jpg',
+            'https://project.supabase.co',
+            configId
+        ),
+        ''
+    );
+});
+
+test('cleanup remove a imagem anterior pelo contrato REST do Storage', async () => {
+    const configId = 'site_brothers';
+    const directory = getSocialImageDirectory(configId);
+    let request;
+    global.fetch = async (url, options) => {
+        request = { url, options };
+        return { ok: true, status: 200, text: async () => '' };
+    };
+
+    await saveConfigHandler.deletePreviousSocialImage(
+        `https://project.supabase.co/storage/v1/object/public/seo-assets/${directory}/social-old.jpg`,
+        '',
+        'https://project.supabase.co',
+        'service-key',
+        configId
+    );
+
+    assert.equal(request.url, 'https://project.supabase.co/storage/v1/object/seo-assets');
+    assert.equal(request.options.method, 'DELETE');
+    assert.deepEqual(JSON.parse(request.options.body), {
+        prefixes: [`${directory}/social-old.jpg`]
+    });
 });
 
 test('página dinâmica entrega metadados no HTML inicial', async () => {

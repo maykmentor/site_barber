@@ -9,6 +9,7 @@
     "test": "node --test"
   },
   "dependencies": {
-    "@trybyte/robotstxt-parser": "1.2.0"
+    "@trybyte/robotstxt-parser": "1.2.0",
+    "jpeg-js": "0.4.4"
   }
 }
