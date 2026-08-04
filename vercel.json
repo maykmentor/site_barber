@@ -1,13 +1,43 @@
 {
   "cleanUrls": true,
-  "rewrites": [
+  "functions": {
+    "api/page.js": {
+      "includeFiles": "index.html"
+    }
+  },
+  "routes": [
     {
-      "source": "/robots.txt",
-      "destination": "/api/robots"
+      "src": "^/index(?:\\.html)?$",
+      "headers": {
+        "Location": "/"
+      },
+      "status": 308
     },
     {
-      "source": "/admin",
-      "destination": "/admin.html"
+      "src": "^/layout(?:\\.html)?$",
+      "headers": {
+        "Location": "/"
+      },
+      "status": 308
+    },
+    {
+      "src": "^/$",
+      "dest": "/api/page"
+    },
+    {
+      "src": "^/robots\\.txt$",
+      "dest": "/api/robots"
+    },
+    {
+      "src": "^/sitemap\\.xml$",
+      "dest": "/api/sitemap"
+    },
+    {
+      "src": "^/admin$",
+      "dest": "/admin.html"
+    },
+    {
+      "handle": "filesystem"
     }
   ]
 }

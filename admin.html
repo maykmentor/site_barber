@@ -138,7 +138,10 @@
                         <span class="material-symbols-outlined text-lg">map</span> Localização
                     </button>
                     <button data-tab="seo" class="tab-btn flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold tracking-wide uppercase transition-colors text-left text-on-surface-variant hover:bg-surface-container-high hover:text-primary">
-                        <span class="material-symbols-outlined text-lg">travel_explore</span> SEO & Robots
+                        <span class="material-symbols-outlined text-lg">travel_explore</span> SEO
+                    </button>
+                    <button data-tab="robots" class="tab-btn flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold tracking-wide uppercase transition-colors text-left text-on-surface-variant hover:bg-surface-container-high hover:text-primary">
+                        <span class="material-symbols-outlined text-lg">smart_toy</span> Robots.txt
                     </button>
                     <button data-tab="integracoes" class="tab-btn flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold tracking-wide uppercase transition-colors text-left text-on-surface-variant hover:bg-surface-container-high hover:text-primary">
                         <span class="material-symbols-outlined text-lg">sync_alt</span> Integrações
@@ -662,8 +665,87 @@
                     </div>
                 </div>
                 
-                <!-- ABA: SEO & ROBOTS -->
+                <!-- ABA: SEO -->
                 <div id="tab-content-seo" class="tab-content hidden flex flex-col gap-5">
+                    <p class="text-xs text-on-surface-variant font-light">Configure como este salão aparece no Google, nas redes sociais e em compartilhamentos. Os valores vazios usam sugestões geradas a partir do nome, cidade e serviços.</p>
+
+                    <div class="bg-primary-container/5 border border-primary-container/20 rounded-xl p-5 flex flex-col gap-5">
+                        <div>
+                            <h3 class="font-display font-semibold text-sm text-primary uppercase tracking-wider">Resultado de busca</h3>
+                            <p class="text-[10px] text-on-surface-variant font-light mt-1">Título e descrição únicos para este domínio. Os limites são orientativos; o Google pode adaptar o texto exibido.</p>
+                        </div>
+                        <div class="grid grid-cols-1 gap-5">
+                            <div class="flex flex-col gap-2">
+                                <div class="flex items-center justify-between gap-3">
+                                    <label for="seo-title" class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Título SEO</label>
+                                    <span id="seo-title-count" class="text-[10px] text-on-surface-variant">0 / 65</span>
+                                </div>
+                                <input type="text" id="seo-title" maxlength="120" class="w-full px-4 py-3 rounded-lg text-sm" placeholder="Nome da Barbearia | Barbearia em Cidade - UF">
+                            </div>
+                            <div class="flex flex-col gap-2">
+                                <div class="flex items-center justify-between gap-3">
+                                    <label for="seo-description" class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Meta description</label>
+                                    <span id="seo-description-count" class="text-[10px] text-on-surface-variant">0 / 160</span>
+                                </div>
+                                <textarea id="seo-description" rows="3" maxlength="320" class="w-full px-4 py-3 rounded-lg text-sm" placeholder="Descreva serviços, localização e principal benefício para o cliente."></textarea>
+                            </div>
+                            <div class="flex flex-col gap-2">
+                                <label for="seo-canonical" class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">URL canonical</label>
+                                <input type="url" id="seo-canonical" class="w-full px-4 py-3 rounded-lg text-sm" placeholder="https://www.seudominio.com.br/">
+                                <span class="text-[10px] text-on-surface-variant font-light">Use o domínio oficial de produção. Isso consolida URLs com parâmetros e aliases da Vercel.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="bg-surface-container border border-outline-variant/20 rounded-xl p-5 flex flex-col gap-4">
+                            <div>
+                                <h3 class="font-display font-semibold text-sm text-primary uppercase tracking-wider">Estratégia de conteúdo</h3>
+                                <p class="text-[10px] text-on-surface-variant font-light mt-1">Termos editoriais para orientar textos, H1, serviços e imagens. Não geramos a tag meta keywords, ignorada pelo Google.</p>
+                            </div>
+                            <div class="flex flex-col gap-2">
+                                <label for="seo-primary-keyword" class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Termo principal</label>
+                                <input type="text" id="seo-primary-keyword" class="w-full px-4 py-3 rounded-lg text-sm" placeholder="barbearia em Lucas do Rio Verde">
+                            </div>
+                            <div class="flex flex-col gap-2">
+                                <label for="seo-secondary-keywords" class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Termos complementares</label>
+                                <textarea id="seo-secondary-keywords" rows="4" class="w-full px-4 py-3 rounded-lg text-sm" placeholder="corte masculino, degradê, corte e barba, visagismo"></textarea>
+                                <span class="text-[10px] text-on-surface-variant font-light">Separe os termos por vírgula.</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-surface-container border border-outline-variant/20 rounded-xl p-5 flex flex-col gap-4">
+                            <div>
+                                <h3 class="font-display font-semibold text-sm text-primary uppercase tracking-wider">Compartilhamento social</h3>
+                                <p class="text-[10px] text-on-surface-variant font-light mt-1">Personalize a prévia no WhatsApp, Facebook, LinkedIn e X. Campos vazios usam o SEO principal.</p>
+                            </div>
+                            <div class="flex flex-col gap-2">
+                                <label for="seo-social-title" class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Título social</label>
+                                <input type="text" id="seo-social-title" class="w-full px-4 py-3 rounded-lg text-sm">
+                            </div>
+                            <div class="flex flex-col gap-2">
+                                <label for="seo-social-description" class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Descrição social</label>
+                                <textarea id="seo-social-description" rows="3" class="w-full px-4 py-3 rounded-lg text-sm"></textarea>
+                            </div>
+                            <div class="flex flex-col gap-2">
+                                <label for="seo-social-image" class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Imagem social</label>
+                                <input type="url" id="seo-social-image" class="w-full px-4 py-3 rounded-lg text-sm" placeholder="https://.../imagem-1200x630.jpg">
+                                <span class="text-[10px] text-on-surface-variant font-light">Recomendação: imagem pública de 1200 × 630 px.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl p-5 border border-outline-variant/20 text-[#202124] flex flex-col gap-1 overflow-hidden">
+                        <div id="seo-preview-url" class="text-xs text-[#4d5156] truncate">https://www.seudominio.com.br/</div>
+                        <div id="seo-preview-title" class="text-xl text-[#1a0dab] truncate">Título da página</div>
+                        <div id="seo-preview-description" class="text-sm text-[#4d5156] leading-relaxed">A descrição da página aparecerá aqui.</div>
+                    </div>
+
+                    <div id="seo-indexing-status" class="border border-outline-variant/30 rounded-xl px-4 py-3 text-xs text-on-surface-variant"></div>
+                </div>
+
+                <!-- ABA: ROBOTS.TXT -->
+                <div id="tab-content-robots" class="tab-content hidden flex flex-col gap-5">
                     <p class="text-xs text-on-surface-variant font-light">Controle como mecanismos de busca e outros robôs rastreiam este domínio. A configuração é exclusiva deste deployment na Vercel.</p>
 
                     <div class="bg-surface-container border border-outline-variant/20 rounded-xl p-5 flex flex-col gap-3">
@@ -894,7 +976,17 @@
             map_iframe: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3657.1975870002874!2d-46.654316085022175!3d-23.561349884682054!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94ce59c8da06ab91%3A0xf65cd64d35eb659c!2sAv.%20Paulista%2C%201000%20-%20Bela%20Vista%2C%20S%C3%A3o%20Paulo%20-%20SP%2C%2001310-100!5e0!3m2!1spt-BR!2sbr!4v1684784910394!5m2!1spt-BR!2sbr"
           },
           seo: {
-            robots_txt: "User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /admin.html\nDisallow: /api/"
+            title: "",
+            description: "",
+            canonical_url: "",
+            social_title: "",
+            social_description: "",
+            social_image_url: "",
+            primary_keyword: "",
+            secondary_keywords: []
+          },
+          robots: {
+            txt: "User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /admin.html\nDisallow: /api/"
           },
           integrations: {
             gtm_id: "",
@@ -1009,10 +1101,124 @@
             });
         });
 
+        // PREVIA E ORIENTACAO DE SEO
+        const seoFieldIds = [
+            'seo-title',
+            'seo-description',
+            'seo-canonical',
+            'seo-primary-keyword',
+            'seo-secondary-keywords',
+            'seo-social-title',
+            'seo-social-description',
+            'seo-social-image',
+            'g-name',
+            'l-city',
+            'l-address'
+        ];
+
+        function getSeoFallbacks() {
+            const configuredName = document.getElementById('g-name').value.trim();
+            const name = configuredName || 'Nome da Barbearia';
+            const rawCity = document.getElementById('l-city').value.trim();
+            const address = document.getElementById('l-address').value.trim();
+            const cityParts = rawCity.split(/\s+-\s+/);
+            const locality = cityParts[0] ? cityParts[0].trim() : '';
+            const stateMatches = Array.from(address.matchAll(/-\s*([A-Z]{2})(?=\s*(?:,|$))/g));
+            const state = stateMatches.length
+                ? stateMatches[stateMatches.length - 1][1]
+                : (cityParts[1] || '').trim().slice(0, 2).toUpperCase();
+            const city = locality && state ? `${locality} - ${state}` : locality;
+            const title = city ? `${name} | Barbearia em ${city}` : `${name} | Barbearia`;
+            const description = city
+                ? `${name} em ${city}. Cortes masculinos, barba e atendimento especializado. Agende seu horário pelo WhatsApp.`
+                : `${name}. Cortes masculinos, barba e atendimento especializado.`;
+            return { name, configuredName, city, address, title, description };
+        }
+
+        function isRobotsBlockedForPreview() {
+            const content = document.getElementById('seo-robots').value;
+            let groupAgents = [];
+            let groupHasRule = false;
+            let strongestDisallow = 0;
+            let strongestAllow = 0;
+
+            content.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n').split('\n').forEach(originalLine => {
+                const line = originalLine.replace(/#.*$/, '').trim();
+                const separator = line.indexOf(':');
+                if (!line || separator === -1) return;
+                const directive = line.slice(0, separator).trim().toLowerCase();
+                const directiveValue = line.slice(separator + 1).trim();
+                if (directive === 'user-agent') {
+                    if (groupHasRule) {
+                        groupAgents = [];
+                        groupHasRule = false;
+                    }
+                    groupAgents.push(directiveValue.toLowerCase());
+                    return;
+                }
+                if (!['allow', 'disallow'].includes(directive)) return;
+                groupHasRule = true;
+                if (!groupAgents.includes('*') || !/^\/\**\$?$/.test(directiveValue)) return;
+                if (directive === 'disallow') strongestDisallow = Math.max(strongestDisallow, directiveValue.length);
+                if (directive === 'allow') strongestAllow = Math.max(strongestAllow, directiveValue.length);
+            });
+            return strongestDisallow > 0 && strongestDisallow > strongestAllow;
+        }
+
+        function updateSeoPreview() {
+            const fallback = getSeoFallbacks();
+            const titleInput = document.getElementById('seo-title');
+            const descriptionInput = document.getElementById('seo-description');
+            const canonicalInput = document.getElementById('seo-canonical');
+            const title = titleInput.value.trim() || fallback.title;
+            const description = descriptionInput.value.trim() || fallback.description;
+            const configuredCanonical = canonicalInput.value.trim();
+            const canonical = configuredCanonical || `${window.location.origin}/`;
+            const titleCount = document.getElementById('seo-title-count');
+            const descriptionCount = document.getElementById('seo-description-count');
+
+            titleCount.textContent = `${titleInput.value.length} / 65`;
+            titleCount.style.color = titleInput.value.length > 65 ? '#ffb4ab' : '';
+            descriptionCount.textContent = `${descriptionInput.value.length} / 160`;
+            descriptionCount.style.color = descriptionInput.value.length > 160 ? '#ffb4ab' : '';
+            document.getElementById('seo-preview-url').textContent = canonical;
+            document.getElementById('seo-preview-title').textContent = title;
+            document.getElementById('seo-preview-description').textContent = description;
+
+            const normalizedName = fallback.name.toLowerCase();
+            const usesPlaceholder = !fallback.configuredName
+                || normalizedName === 'barber premium'
+                || normalizedName === 'barber'
+                || (/são paulo|sao paulo/i.test(fallback.city) && /av\.? paulista,? 1000/i.test(fallback.address));
+            let hasValidCanonical = false;
+            try {
+                const canonicalUrl = new URL(configuredCanonical);
+                hasValidCanonical = ['http:', 'https:'].includes(canonicalUrl.protocol)
+                    && canonicalUrl.origin === window.location.origin;
+            } catch (_error) {}
+            const robotsBlocked = isRobotsBlockedForPreview();
+            const hasIdentity = Boolean(fallback.configuredName
+                && fallback.city
+                && fallback.address
+                && !usesPlaceholder
+                && hasValidCanonical
+                && !robotsBlocked);
+            const status = document.getElementById('seo-indexing-status');
+            status.textContent = robotsBlocked
+                ? 'Indexação: bloqueada pelo robots.txt. Remova o bloqueio global para permitir indexação e inclusão no sitemap.'
+                : (hasIdentity
+                    ? 'Indexação: pronta. O site possui identidade, localização e canonical suficientes para entrar no sitemap.'
+                    : 'Indexação: noindex temporário. Preencha nome, cidade, endereço e canonical oficiais para liberar o site e incluí-lo no sitemap.');
+            status.style.borderColor = hasIdentity ? 'var(--dynamic-primary)' : '#ffb4ab';
+            status.style.color = hasIdentity ? 'var(--dynamic-primary)' : '#ffb4ab';
+        }
+
+        seoFieldIds.forEach(id => document.getElementById(id).addEventListener('input', updateSeoPreview));
+
         // CONFIGURAÇÃO E TESTE DO ROBOTS.TXT
         const MAX_ROBOTS_BYTES = 500 * 1024;
         const ROBOTS_PRESETS = {
-            recommended: DEFAULT_CONFIG.seo.robots_txt,
+            recommended: `${DEFAULT_CONFIG.robots.txt}\nSitemap: ${window.location.origin}/sitemap.xml`,
             allow: "User-agent: *\nAllow: /",
             block: "User-agent: *\nDisallow: /"
         };
@@ -1033,10 +1239,14 @@
         function applyRobotsPreset(content) {
             robotsTextarea.value = content;
             updateRobotsByteCount();
+            updateSeoPreview();
             document.getElementById('seo-validation-status').classList.add('hidden');
         }
 
-        robotsTextarea.addEventListener('input', updateRobotsByteCount);
+        robotsTextarea.addEventListener('input', () => {
+            updateRobotsByteCount();
+            updateSeoPreview();
+        });
         document.getElementById('seo-preset-recommended').addEventListener('click', () => applyRobotsPreset(ROBOTS_PRESETS.recommended));
         document.getElementById('seo-preset-allow').addEventListener('click', () => applyRobotsPreset(ROBOTS_PRESETS.allow));
         document.getElementById('seo-preset-block').addEventListener('click', () => {
@@ -1265,6 +1475,7 @@
         }
 
         let currentGalleryData = [];
+        let currentConfigData = DEFAULT_CONFIG;
 
         function renderAdminGallery() {
             const containers = {
@@ -1554,6 +1765,7 @@
             
             // Normaliza o formato da galeria
             data = migrateGalleryFormat(data);
+            currentConfigData = data;
             currentGalleryData = data.gallery || [];
             renderAdminGallery();
             // Geral
@@ -1621,12 +1833,26 @@
             document.getElementById('l-directions-url').value = data.location.directions_url || '';
             document.getElementById('l-iframe').value = data.location.map_iframe;
 
-            // SEO & Robots
+            // SEO
             const seoConfig = data.seo || DEFAULT_CONFIG.seo;
-            document.getElementById('seo-robots').value = typeof seoConfig.robots_txt === 'string'
-                ? seoConfig.robots_txt
-                : DEFAULT_CONFIG.seo.robots_txt;
+            document.getElementById('seo-title').value = seoConfig.title || '';
+            document.getElementById('seo-description').value = seoConfig.description || '';
+            document.getElementById('seo-canonical').value = seoConfig.canonical_url || '';
+            document.getElementById('seo-primary-keyword').value = seoConfig.primary_keyword || '';
+            document.getElementById('seo-secondary-keywords').value = Array.isArray(seoConfig.secondary_keywords)
+                ? seoConfig.secondary_keywords.join(', ')
+                : (seoConfig.secondary_keywords || '');
+            document.getElementById('seo-social-title').value = seoConfig.social_title || '';
+            document.getElementById('seo-social-description').value = seoConfig.social_description || '';
+            document.getElementById('seo-social-image').value = seoConfig.social_image_url || '';
+
+            // Robots.txt: novo namespace com fallback para configurações antigas.
+            const robotsConfig = data.robots || {};
+            document.getElementById('seo-robots').value = typeof robotsConfig.txt === 'string'
+                ? robotsConfig.txt
+                : (typeof seoConfig.robots_txt === 'string' ? seoConfig.robots_txt : DEFAULT_CONFIG.robots.txt);
             updateRobotsByteCount();
+            updateSeoPreview();
             
             // Integrações
             document.getElementById('i-gtm').value = data.integrations ? (data.integrations.gtm_id || '') : '';
@@ -1704,7 +1930,13 @@
                 return;
             }
             
+            const secondaryKeywords = document.getElementById('seo-secondary-keywords').value
+                .split(',')
+                .map(keyword => keyword.trim())
+                .filter((keyword, index, keywords) => keyword && keywords.indexOf(keyword) === index);
+
             const newConfig = {
+                ...currentConfigData,
                 general: {
                     name: document.getElementById('g-name').value,
                     whatsapp: document.getElementById('g-whatsapp').value,
@@ -1778,7 +2010,19 @@
                     map_iframe: document.getElementById('l-iframe').value
                 },
                 seo: {
-                    robots_txt: robotsTxt
+                    ...(currentConfigData.seo || {}),
+                    title: document.getElementById('seo-title').value.trim(),
+                    description: document.getElementById('seo-description').value.trim(),
+                    canonical_url: document.getElementById('seo-canonical').value.trim(),
+                    social_title: document.getElementById('seo-social-title').value.trim(),
+                    social_description: document.getElementById('seo-social-description').value.trim(),
+                    social_image_url: document.getElementById('seo-social-image').value.trim(),
+                    primary_keyword: document.getElementById('seo-primary-keyword').value.trim(),
+                    secondary_keywords: secondaryKeywords
+                },
+                robots: {
+                    ...(currentConfigData.robots || {}),
+                    txt: robotsTxt
                 },
                 integrations: {
                     gtm_id: document.getElementById('i-gtm').value,
@@ -1803,6 +2047,8 @@
                     wa_message_template: document.getElementById('eq-wa-message-template').value
                 }
             };
+            delete newConfig.seo.robots_txt;
+            currentConfigData = newConfig;
             
             try {
                 localStorage.setItem('elegance_barber_config', JSON.stringify(newConfig));
@@ -1877,10 +2123,13 @@
                     const parsedData = JSON.parse(event.target.result);
                     // Validação de estrutura básica
                     if (parsedData.general && parsedData.colors && parsedData.services) {
-                        if (!parsedData.seo || typeof parsedData.seo.robots_txt !== 'string') {
-                            parsedData.seo = {
-                                ...(parsedData.seo || {}),
-                                robots_txt: robotsTextarea.value
+                        if (!parsedData.robots || typeof parsedData.robots.txt !== 'string') {
+                            const legacyRobots = parsedData.seo && typeof parsedData.seo.robots_txt === 'string'
+                                ? parsedData.seo.robots_txt
+                                : robotsTextarea.value;
+                            parsedData.robots = {
+                                ...(parsedData.robots || {}),
+                                txt: legacyRobots
                             };
                         }
                         try {

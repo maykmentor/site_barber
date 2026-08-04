@@ -3,8 +3,21 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title id="site-title-tag">Barber Premium Barbershop | Barbearia de Luxo em São Paulo</title>
-    <meta name="description" content="A experiência premium de barbearia que você merece. Cortes de cabelo precisos, barboterapia relaxante e ambiente exclusivo na Av. Paulista. Agende seu horário pelo WhatsApp." />
+    <!-- SEO_DYNAMIC_START -->
+    <title id="site-title-tag">Barbearia | Atendimento e estilo masculino</title>
+    <meta id="meta-description-tag" name="description" content="Cortes masculinos, barba e atendimento especializado. Agende seu horário pelo WhatsApp." />
+    <meta id="meta-robots-tag" name="robots" content="noindex,follow" />
+    <link id="canonical-tag" rel="canonical" href="/" />
+    <meta id="og-title-tag" property="og:title" content="Barbearia | Atendimento e estilo masculino" />
+    <meta id="og-description-tag" property="og:description" content="Cortes masculinos, barba e atendimento especializado." />
+    <meta property="og:type" content="website" />
+    <meta id="og-url-tag" property="og:url" content="/" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta id="twitter-title-tag" name="twitter:title" content="Barbearia | Atendimento e estilo masculino" />
+    <meta id="twitter-description-tag" name="twitter:description" content="Cortes masculinos, barba e atendimento especializado." />
+    <script id="local-business-jsonld" type="application/ld+json">{"@context":"https://schema.org","@type":"HairSalon","name":"Barbearia"}</script>
+    <!-- SEO_DYNAMIC_END -->
     
     <!-- Google Tag Manager Dinâmico -->
     <script id="gtm-dynamic-injector">
@@ -40,11 +53,6 @@
             }
         })();
     </script>
-    
-    <!-- SEO Open Graph -->
-    <meta property="og:title" id="og-title-tag" content="Barber Premium Barbershop | Barbearia de Luxo" />
-    <meta property="og:description" content="Vivencie a precisão do visagismo e o conforto de um lounge de elite na Av. Paulista. Agendamento prático via WhatsApp." />
-    <meta property="og:type" content="website" />
     
     <!-- Recursos Estáticos Locais Compilados para Alta Performance (PageSpeed 100) -->
     <link href="assets/css/app-compiled.min.css" rel="stylesheet"/>
@@ -763,15 +771,67 @@
                     return (window.innerWidth < 768 && mobileUrl && mobileUrl.trim() !== '') ? mobileUrl : desktopUrl;
                 };
 
+                // SEO no cliente complementa o HTML inicial renderizado no servidor.
+                const seoConfig = config.seo || {};
+                const businessName = config.general && config.general.name ? config.general.name.trim() : 'Barbearia';
+                const rawBusinessCity = config.location && config.location.city ? config.location.city.trim() : '';
+                const businessAddress = config.location && config.location.address ? config.location.address.trim() : '';
+                const cityParts = rawBusinessCity.split(/\s+-\s+/);
+                const locality = cityParts[0] ? cityParts[0].trim() : '';
+                const stateMatches = Array.from(businessAddress.matchAll(/-\s*([A-Z]{2})(?=\s*(?:,|$))/g));
+                const businessState = stateMatches.length
+                    ? stateMatches[stateMatches.length - 1][1]
+                    : (cityParts[1] || '').trim().slice(0, 2).toUpperCase();
+                const businessCity = locality && businessState ? `${locality} - ${businessState}` : locality;
+                const serviceNames = Array.isArray(config.services)
+                    ? config.services.map(service => service && service.name ? service.name.trim() : '').filter(Boolean).slice(0, 3)
+                    : [];
+                const truncateSeo = (value, limit) => {
+                    const text = value.trim().replace(/\s+/g, ' ');
+                    if (text.length <= limit) return text;
+                    const shortened = text.slice(0, limit - 1);
+                    const boundary = shortened.lastIndexOf(' ');
+                    return `${shortened.slice(0, boundary > limit * 0.65 ? boundary : shortened.length).trim()}…`;
+                };
+                const fallbackSeoTitle = businessCity
+                    ? `${businessName} | Barbearia em ${businessCity}`
+                    : (businessName === 'Barbearia' ? 'Barbearia | Atendimento e estilo masculino' : `${businessName} | Barbearia`);
+                const fallbackSeoDescription = businessCity
+                    ? `${businessName} em ${businessCity}. ${serviceNames.length ? `${serviceNames.join(', ')}. ` : ''}Agende seu horário pelo WhatsApp.`
+                    : `${businessName}. Cortes masculinos, barba e atendimento especializado.`;
+                const seoTitle = seoConfig.title && seoConfig.title.trim() ? seoConfig.title.trim() : truncateSeo(fallbackSeoTitle, 65);
+                const seoDescription = seoConfig.description && seoConfig.description.trim()
+                    ? seoConfig.description.trim()
+                    : truncateSeo(fallbackSeoDescription, 160);
+                const socialTitle = seoConfig.social_title && seoConfig.social_title.trim()
+                    ? seoConfig.social_title.trim()
+                    : seoTitle;
+                const socialDescription = seoConfig.social_description && seoConfig.social_description.trim()
+                    ? seoConfig.social_description.trim()
+                    : seoDescription;
+                const canonicalUrl = seoConfig.canonical_url && seoConfig.canonical_url.trim()
+                    ? seoConfig.canonical_url.trim()
+                    : `${window.location.origin}/`;
+                const setContent = (id, value) => {
+                    const element = document.getElementById(id);
+                    if (element) element.setAttribute('content', value);
+                };
+
+                document.title = seoTitle;
+                setContent('meta-description-tag', seoDescription);
+                setContent('og-title-tag', socialTitle);
+                setContent('og-description-tag', socialDescription);
+                setContent('og-url-tag', canonicalUrl);
+                setContent('twitter-title-tag', socialTitle);
+                setContent('twitter-description-tag', socialDescription);
+                const canonicalTag = document.getElementById('canonical-tag');
+                if (canonicalTag) canonicalTag.setAttribute('href', canonicalUrl);
+
                 // 1. Geral & Contato
                 if (config.general) {
                     const name = config.general.name || "BARBER";
                     document.getElementById('nav-site-name').innerText = name.toUpperCase();
                     document.getElementById('footer-site-name').innerText = name;
-                    
-                    const city = (config.location && config.location.city && config.location.city.trim() !== '') ? config.location.city : "São Paulo";
-                    document.getElementById('site-title-tag').innerText = `${name} | Barbearia de Luxo em ${city}`;
-                    document.getElementById('og-title-tag').setAttribute('content', `${name} | Barbearia de Luxo`);
                     document.getElementById('footer-copyright').innerText = `© 2026 ${name} Barbershop. Todos os direitos reservados.`;
                     
                     // Logo Customizada e Responsiva

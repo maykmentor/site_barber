@@ -1,7 +1,8 @@
 const {
     DEFAULT_ROBOTS_TXT,
     formatRobotsText,
-    inspectRobotsText
+    inspectRobotsText,
+    resolveRobotsText
 } = require('../lib/robots');
 
 function sendRobots(res, method, content) {
@@ -20,6 +21,16 @@ function sendUnavailable(res, method) {
     res.setHeader('Retry-After', '300');
     res.setHeader('X-Content-Type-Options', 'nosniff');
     return res.status(503).end(method === 'HEAD' ? undefined : message);
+}
+
+function appendSitemap(content, req) {
+    if (/^\s*Sitemap\s*:/im.test(content)) return content;
+    const host = req.headers?.['x-forwarded-host'] || req.headers?.host;
+    if (!host) return content;
+    const protocol = req.headers?.['x-forwarded-proto'] || (host.includes('localhost') ? 'http' : 'https');
+    const normalized = content.replace(/\s*$/, '');
+    const separator = normalized ? '\n' : '';
+    return `${normalized}${separator}Sitemap: ${protocol}://${host}/sitemap.xml`;
 }
 
 module.exports = async (req, res) => {
@@ -56,8 +67,8 @@ module.exports = async (req, res) => {
         }
 
         const rows = await response.json();
-        const configuredValue = rows?.[0]?.dados?.seo?.robots_txt;
-        const content = typeof configuredValue === 'string' ? configuredValue : DEFAULT_ROBOTS_TXT;
+        const configuredValue = resolveRobotsText(rows?.[0]?.dados, DEFAULT_ROBOTS_TXT);
+        const content = appendSitemap(configuredValue, req);
         const inspection = inspectRobotsText(content);
 
         if (inspection.errors.length > 0) {

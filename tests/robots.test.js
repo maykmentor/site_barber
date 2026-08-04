@@ -5,7 +5,9 @@ const {
     DEFAULT_ROBOTS_TXT,
     MAX_ROBOTS_BYTES,
     formatRobotsText,
-    inspectRobotsText
+    inspectRobotsText,
+    isSiteBlocked,
+    resolveRobotsText
 } = require('../lib/robots');
 const robotsHandler = require('../api/robots');
 const validateRobotsHandler = require('../api/validate-robots');
@@ -49,6 +51,30 @@ test('configuração padrão é válida e formatada com quebra final', () => {
     assert.deepEqual(inspection.errors, []);
     assert.deepEqual(inspection.warnings, []);
     assert.equal(formatRobotsText(DEFAULT_ROBOTS_TXT).endsWith('\n'), true);
+});
+
+test('novo namespace de robots tem prioridade e mantém fallback legado', () => {
+    assert.equal(resolveRobotsText({
+        robots: { txt: 'User-agent: *\nAllow: /novo' },
+        seo: { robots_txt: 'User-agent: *\nDisallow: /legado' }
+    }), 'User-agent: *\nAllow: /novo');
+    assert.equal(resolveRobotsText({
+        seo: { robots_txt: 'User-agent: *\nDisallow: /legado' }
+    }), 'User-agent: *\nDisallow: /legado');
+});
+
+test('bloqueio global reconhece grupos múltiplos e wildcard', () => {
+    assert.equal(isSiteBlocked([
+        'User-agent: *',
+        'User-agent: Googlebot',
+        'Disallow: /*'
+    ].join('\n')), true);
+    assert.equal(isSiteBlocked([
+        'User-agent: *',
+        'Disallow: /',
+        'Allow: /'
+    ].join('\n')), false);
+    assert.equal(isSiteBlocked('User-agent: *\nDisallow: /privado'), false);
 });
 
 test('inspeção rejeita tamanho excessivo e caractere nulo', () => {
@@ -116,6 +142,23 @@ test('GET /robots.txt retorna configuração do deployment correto', async () =>
 
     assert.match(requestedUrl, /id=eq\.cliente%20especial/);
     assert.equal(res.body, 'User-agent: *\nDisallow: /privado\n');
+});
+
+test('GET /robots.txt anuncia o sitemap do domínio quando não configurado', async () => {
+    process.env.SUPABASE_URL = 'https://project.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-key';
+    global.fetch = async () => ({
+        ok: true,
+        json: async () => [{ dados: { robots: { txt: 'User-agent: *\nAllow: /' } } }]
+    });
+    const res = createResponse();
+
+    await robotsHandler({
+        method: 'GET',
+        headers: { host: 'www.example.com', 'x-forwarded-proto': 'https' }
+    }, res);
+
+    assert.match(res.body, /Sitemap: https:\/\/www\.example\.com\/sitemap\.xml/);
 });
 
 test('GET /robots.txt usa o padrão quando o registro antigo não possui SEO', async () => {

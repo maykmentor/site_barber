@@ -5,6 +5,34 @@ const { inspectRobotsText } = require('../lib/robots');
 // Hash SHA-256 da senha mestra correspondente a "6AEwhQnQCoTWHWF!id$52z"
 const MASTER_PASSWORD_HASH = "bb87999ce3ba58cef343d0a6c2d9d2d294b9f817eeee16dc3c05d6d6b331a5f5";
 
+function mergeStoredConfig(currentConfig, submittedConfig, normalizedRobotsText, flags = {}) {
+    const suppliedSeo = submittedConfig.seo && typeof submittedConfig.seo === 'object' ? submittedConfig.seo : {};
+    const suppliedRobots = submittedConfig.robots && typeof submittedConfig.robots === 'object' ? submittedConfig.robots : {};
+    const mergedSeo = {
+        ...(currentConfig.seo || {}),
+        ...suppliedSeo
+    };
+    const mergedRobots = {
+        ...(currentConfig.robots || {}),
+        ...suppliedRobots
+    };
+
+    if (flags.hasModernRobots || flags.hasLegacyRobots) {
+        mergedRobots.txt = normalizedRobotsText;
+    }
+    if (flags.hasModernRobots) {
+        delete mergedSeo.robots_txt;
+    } else if (flags.hasLegacyRobots) {
+        mergedSeo.robots_txt = normalizedRobotsText;
+    }
+
+    return {
+        ...submittedConfig,
+        seo: mergedSeo,
+        robots: mergedRobots
+    };
+}
+
 module.exports = async (req, res) => {
     // Adiciona cabeçalhos de CORS básicos
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -39,8 +67,15 @@ module.exports = async (req, res) => {
         return res.status(403).json({ success: false, error: "Senha de segurança administrativa incorreta." });
     }
 
-    if (config.seo && Object.prototype.hasOwnProperty.call(config.seo, 'robots_txt')) {
-        const robotsInspection = inspectRobotsText(config.seo.robots_txt);
+    const suppliedSeo = config.seo && typeof config.seo === 'object' ? config.seo : {};
+    const suppliedRobots = config.robots && typeof config.robots === 'object' ? config.robots : {};
+    const hasModernRobots = Object.prototype.hasOwnProperty.call(suppliedRobots, 'txt');
+    const hasLegacyRobots = Object.prototype.hasOwnProperty.call(suppliedSeo, 'robots_txt');
+    const suppliedRobotsText = hasModernRobots ? suppliedRobots.txt : suppliedSeo.robots_txt;
+    let normalizedRobotsText;
+
+    if (hasModernRobots || hasLegacyRobots) {
+        const robotsInspection = inspectRobotsText(suppliedRobotsText);
         if (robotsInspection.errors.length > 0) {
             return res.status(400).json({
                 success: false,
@@ -48,7 +83,7 @@ module.exports = async (req, res) => {
                 errors: robotsInspection.errors
             });
         }
-        config.seo.robots_txt = robotsInspection.normalized;
+        normalizedRobotsText = robotsInspection.normalized;
     }
 
     // Variáveis de ambiente padrão injetadas pelo Supabase na Vercel
@@ -65,38 +100,26 @@ module.exports = async (req, res) => {
     }
 
     try {
-        let configToSave = config;
-        const suppliedSeo = config.seo && typeof config.seo === 'object' ? config.seo : null;
-        const hasRobotsField = suppliedSeo && Object.prototype.hasOwnProperty.call(suppliedSeo, 'robots_txt');
-
-        // Preserva robots.txt quando um painel ou backup antigo salva um documento sem o novo campo.
-        if (!hasRobotsField) {
-            const currentResponse = await fetch(
-                `${supabaseUrl}/rest/v1/configuracoes?id=eq.${encodeURIComponent(configId)}&select=dados`,
-                {
-                    headers: {
-                        apikey: supabaseKey,
-                        Authorization: `Bearer ${supabaseKey}`
-                    }
+        const currentResponse = await fetch(
+            `${supabaseUrl}/rest/v1/configuracoes?id=eq.${encodeURIComponent(configId)}&select=dados`,
+            {
+                headers: {
+                    apikey: supabaseKey,
+                    Authorization: `Bearer ${supabaseKey}`
                 }
-            );
-
-            if (!currentResponse.ok) {
-                throw new Error(`Não foi possível preservar a configuração atual de SEO (${currentResponse.status}).`);
             }
+        );
 
-            const currentRows = await currentResponse.json();
-            const currentSeo = currentRows?.[0]?.dados?.seo;
-            if (currentSeo && typeof currentSeo === 'object') {
-                configToSave = {
-                    ...config,
-                    seo: {
-                        ...currentSeo,
-                        ...(suppliedSeo || {})
-                    }
-                };
-            }
+        if (!currentResponse.ok) {
+            throw new Error(`Não foi possível preservar a configuração atual (${currentResponse.status}).`);
         }
+
+        const currentRows = await currentResponse.json();
+        const currentConfig = currentRows?.[0]?.dados || {};
+        const configToSave = mergeStoredConfig(currentConfig, config, normalizedRobotsText, {
+            hasModernRobots,
+            hasLegacyRobots
+        });
 
         // Envia os dados para a API REST do Supabase para realizar um UPSERT nativo no banco
         // Para fazer UPSERT no Supabase/PostgREST enviamos um POST com a chave primária 'id'
@@ -126,3 +149,5 @@ module.exports = async (req, res) => {
         return res.status(500).json({ success: false, error: `Falha ao gravar na nuvem: ${error.message}` });
     }
 };
+
+module.exports.mergeStoredConfig = mergeStoredConfig;

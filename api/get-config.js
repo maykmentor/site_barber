@@ -22,7 +22,7 @@ module.exports = async (req, res) => {
     try {
         // Faz a requisição REST HTTP nativa para o Supabase (PostgREST)
         // Busca o campo 'dados' da tabela 'configuracoes' onde 'id' é igual ao configId exclusivo
-        const response = await fetch(`${supabaseUrl}/rest/v1/configuracoes?id=eq.${configId}&select=dados`, {
+        const response = await fetch(`${supabaseUrl}/rest/v1/configuracoes?id=eq.${encodeURIComponent(configId)}&select=dados`, {
             headers: {
                 apikey: supabaseKey,
                 Authorization: `Bearer ${supabaseKey}`
