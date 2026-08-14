@@ -72,7 +72,20 @@ async function ensurePublicBucket(supabaseUrl, serviceRoleKey) {
         headers: storageHeaders(serviceRoleKey)
     });
 
-    if (response.status === 404) {
+    let errorPayload = null;
+    if (!response.ok && response.status !== 404) {
+        try {
+            errorPayload = await response.json();
+        } catch (_error) {
+            errorPayload = null;
+        }
+    }
+
+    const bucketNotFound = response.status === 404
+        || errorPayload?.code === 'NoSuchBucket'
+        || Number(errorPayload?.statusCode) === 404;
+
+    if (bucketNotFound) {
         const createResponse = await fetch(`${supabaseUrl}/storage/v1/bucket`, {
             method: 'POST',
             headers: storageHeaders(serviceRoleKey, { 'Content-Type': 'application/json' }),
@@ -91,7 +104,8 @@ async function ensurePublicBucket(supabaseUrl, serviceRoleKey) {
     }
 
     if (!response.ok) {
-        throw new Error(`Não foi possível consultar o bucket de SEO (${response.status}).`);
+        const errorCode = typeof errorPayload?.code === 'string' ? `: ${errorPayload.code}` : '';
+        throw new Error(`Não foi possível consultar o bucket de SEO (${response.status}${errorCode}).`);
     }
 
     const bucket = await response.json();

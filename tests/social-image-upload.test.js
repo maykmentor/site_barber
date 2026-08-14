@@ -142,6 +142,59 @@ test('upload social cria bucket público e retorna URL HTTPS', async () => {
     assert.equal(Buffer.isBuffer(calls[2].options.body), true);
 });
 
+test('upload social cria bucket quando o Storage retorna NoSuchBucket dentro de HTTP 400', async () => {
+    configureEnvironment();
+    const calls = [];
+    global.fetch = async (url, options = {}) => {
+        calls.push({ url, options });
+        if (calls.length === 1) {
+            return {
+                ok: false,
+                status: 400,
+                json: async () => ({ statusCode: '404', code: 'NoSuchBucket', message: 'Bucket not found' })
+            };
+        }
+        return { ok: true, status: 200, json: async () => ({}) };
+    };
+    const res = createResponse();
+
+    await uploadSocialImageHandler({
+        method: 'POST',
+        headers: createAuthorizedHeaders(),
+        body: { image: createJpegDataUrl() }
+    }, res);
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.success, true);
+    assert.equal(calls.length, 3);
+    assert.equal(calls[1].options.method, 'POST');
+    assert.equal(calls[2].options.method, 'POST');
+});
+
+test('upload social não trata qualquer resposta HTTP 400 como bucket ausente', async () => {
+    configureEnvironment();
+    const calls = [];
+    global.fetch = async (url, options = {}) => {
+        calls.push({ url, options });
+        return {
+            ok: false,
+            status: 400,
+            json: async () => ({ code: 'InvalidRequest', message: 'Invalid request' })
+        };
+    };
+    const res = createResponse();
+
+    await uploadSocialImageHandler({
+        method: 'POST',
+        headers: createAuthorizedHeaders(),
+        body: { image: createJpegDataUrl() }
+    }, res);
+
+    assert.equal(res.statusCode, 500);
+    assert.match(res.body.error, /400: InvalidRequest/);
+    assert.equal(calls.length, 1);
+});
+
 test('upload social reconcilia bucket público com restrições divergentes', async () => {
     configureEnvironment();
     const calls = [];
